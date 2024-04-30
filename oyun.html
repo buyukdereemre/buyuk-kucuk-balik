@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Büyük Balık Küçük Balık Oyunu</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('https://thegameassetsmine.com/wp-content/uploads/2017/03/previews-4.jpg');
+    background-size: 120%;
+    background-repeat: no-repeat;
+    background-position: center;
+    overflow: hidden;
+    cursor: none;
+  }
+  #game-container {
+    width: 100%;
+    height: 100%;
+    border: 1px solid black;
+    position: relative;
+    overflow: hidden;
+  }
+  .fish {
+    position: absolute;
+  }
+  .fish img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+  .food {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background-color: yellow;
+    border-radius: 50%;
+  }
+  #player-info {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+</div>
+<div id="player-info">Seviye: <span id="player-level">1</span></div>
+
+<script>
+  const gameContainer = document.getElementById('game-container');
+  let playerFish;
+  let playerLevel = 1;
+  const maxPlayerSize = 70; // Oyuncunun maksimum boyutu
+  const foodCount = 10; // Yem sayısı
+  let remainingFish = 0; // Kalan balık sayısı
+
+  // Oyunu başlatma fonskiyonu
+  function startGame() {
+    // Oyuncuyu ekle
+    playerFish = createFish('https://i.imgur.com/Vp1Oe4B_d.webp?maxwidth=760&fidelity=grand', playerLevel);
+    playerFish.style.left = '50%';
+    playerFish.style.bottom = '0';
+    gameContainer.appendChild(playerFish);
+
+    // Yemleri oluşturma
+    for (let i = 0; i < foodCount; i++) {
+      createFood();
+    }
+
+    // Balıkları oluşturma
+    const fishData = [
+      { size: 35, count: 1, image: 'https://i.imgur.com/uLKc8wn_d.webp?maxwidth=760&fidelity=grand' },
+      { size: 15, count: 2, image: 'https://i.imgur.com/UYnHYdf_d.webp?maxwidth=760&fidelity=grand' },
+      { size: 10, count: 3, image: 'https://i.imgur.com/FaYX9uK_d.webp?maxwidth=760&fidelity=grand' },
+      { size: 8, count: 4, image: 'https://i.imgur.com/XIZdOVC_d.webp?maxwidth=760&fidelity=grand' },
+      { size: 5, count: 5, image: 'https://i.imgur.com/mMA4O1k_d.webp?maxwidth=760&fidelity=grand' }
+    ];
+
+    fishData.forEach(data => {
+      remainingFish += data.count;
+      for (let i = 0; i < data.count; i++) {
+        const fish = createFish(data.image, data.size);
+        setInterval(() => {
+          moveFishRandomly(fish);
+        }, 100); // Her 100 milisaniyede bir hareket et
+      }
+    });
+
+    // Oyuncunun balığını fare konumuna göre hareket ettirme
+    document.addEventListener('mousemove', movePlayerWithMouse);
+
+  }
+
+  // Yemleri yeme
+  function eatFood(event) {
+    if (event.key === 'e') {
+      const playerRect = playerFish.getBoundingClientRect();
+      const foods = document.querySelectorAll('.food');
+
+      foods.forEach(food => {
+        const foodRect = food.getBoundingClientRect();
+        if (
+          playerRect.left < foodRect.right &&
+          playerRect.right > foodRect.left &&
+          playerRect.top < foodRect.bottom &&
+          playerRect.bottom > foodRect.top
+        ) {
+          growFish(playerFish);
+          removeFood(food);
+        }
+      });
+    }
+  }
+
+  // Oyuncunun balığını hareket ettirme
+  function movePlayerWithMouse(event) {
+    const x = event.clientX - gameContainer.getBoundingClientRect().left - playerFish.offsetWidth / 2;
+    const y = event.clientY - gameContainer.getBoundingClientRect().top - playerFish.offsetHeight / 2;
+
+    // Balığın sınırlar içinde kalmasını sağlama (chatgptden yardım aldım bu kısımda)
+    if (x >= 0 && x <= gameContainer.offsetWidth - playerFish.offsetWidth) {
+      playerFish.style.left = x + 'px';
+    }
+    if (y >= 0 && y <= gameContainer.offsetHeight - playerFish.offsetHeight) {
+      playerFish.style.bottom = gameContainer.offsetHeight - y + 'px';
+    }
+
+    // Çarpışma kontrolü yapma
+    checkCollision();
+  }
+
+  // Balık oluşturma fonks
+  function createFish(imageSrc, size) {
+    const fish = document.createElement('div');
+    fish.classList.add('fish');
+    fish.innerHTML = `<img src="${imageSrc}" alt="Fish" width="${size * 20}" height="${size * 20}">`;
+
+
+    const x = Math.floor(Math.random() * (gameContainer.offsetWidth - size * 50));
+    const y = Math.floor(Math.random() * (gameContainer.offsetHeight - size * 50));
+    fish.style.left = x + 'px';
+    fish.style.bottom = y + 'px';
+    fish.setAttribute('data-size', size); // Balığın boyutunu veri olarak sakla
+    gameContainer.appendChild(fish);
+    return fish;
+  }
+
+  // Yem oluşturma fonks
+  function createFood() {
+    const food = document.createElement('div');
+    food.classList.add('food');
+    const x = Math.floor(Math.random() * (gameContainer.offsetWidth - 20));
+    const y = Math.floor(Math.random() * (gameContainer.offsetHeight - 20));
+    food.style.left = x + 'px';
+    food.style.top = y + 'px';
+    gameContainer.appendChild(food);
+  }
+
+  // Balığı rastgele hareket ettirme fonks
+  function moveFishRandomly(fish) {
+    const dx = (Math.floor(Math.random() * 31) - 15) * 4;
+    const dy = (Math.floor(Math.random() * 31) - 15) * 4;
+
+    let newX = parseInt(fish.style.left) + dx;
+    let newY = parseInt(fish.style.bottom) + dy;
+
+    // Balığın sınırlar içinde kalmasını sağlama fonks
+    if (newX < 0) {
+      newX = 0;
+    } else if (newX > gameContainer.offsetWidth - fish.offsetWidth) {
+      newX = gameContainer.offsetWidth - fish.offsetWidth;
+    }
+    if (newY < 0) {
+      newY = 0;
+    } else if (newY > gameContainer.offsetHeight - fish.offsetHeight) {
+      newY = gameContainer.offsetHeight - fish.offsetHeight;
+    }
+
+    fish.style.left = newX + 'px';
+    fish.style.bottom = newY + 'px';
+
+    // Çarpışma kontrolü yapma
+    checkCollisionWithPlayer(fish);
+  }
+//kazanma ve kaybetme sesleri
+const winSound = new Audio('kazanma.mp3');
+const loseSound = new Audio('kaybetme.mp3');
+
+// Oyunu kazaninca calistirdigim fonksiyon
+function winGame() {
+    winSound.play(); // Kazanma sesini çal
+    alert('Tebrikler! Etraftaki tüm balıkları yuttunuz ve oyunu kazandınız!');
+}
+
+// Oyunu kaybedince calistirdigim fonksiyon
+function loseGame() {
+    loseSound.play(); // Kaybetme sesini çal
+    alert('Oyunu kaybettiniz!');
+    // Yeniden başlat
+    location.reload();
+}
+
+// Balığı yutma ve kazanma kontrolü bu kisimda da chatgpt den yardim aldim
+function checkCollisionWithPlayer(fish) {
+    const playerRect = playerFish.getBoundingClientRect();
+    const fishRect = fish.getBoundingClientRect();
+
+    if (
+        playerRect.left < fishRect.right &&
+        playerRect.right > fishRect.left &&
+        playerRect.top < fishRect.bottom &&
+        playerRect.bottom > fishRect.top
+    ) {
+        const fishSize = parseInt(fish.getAttribute('data-size'));
+        if (playerLevel < fishSize) {
+            // Oyunu kaybet
+            loseGame();
+        } else {
+            // Balığı yut
+            growFish(playerFish);
+            fish.parentNode.removeChild(fish);
+            // Kalan balık sayısını azalt
+            remainingFish--;
+            // Eğer kalan balık yoksa kazanma fonksiyonunu çağır
+            if (remainingFish === 0) {
+                winGame();
+            }
+        }
+    }
+}
+
+  // Balığı büyütme
+  function growFish(fish) {
+    const currentSize = parseInt(fish.getAttribute('data-size'));
+    const newSize = currentSize + 1;
+    fish.style.width = newSize * 15 + 'px';
+    fish.style.height = newSize * 15 + 'px';
+    fish.setAttribute('data-size', newSize);
+
+    // Balık resmini büyütme
+    const fishImg = fish.querySelector('img');
+    fishImg.style.width = newSize * 50 + 'px';
+    fishImg.style.height = newSize * 50 + 'px';
+
+    // Seviyeyi güncelle
+    playerLevel += currentSize;
+    document.getElementById('player-level').innerText = playerLevel;
+  }
+
+  // Çarpışma kontrolü
+  function checkCollision() {
+    const playerRect = playerFish.getBoundingClientRect();
+    const foods = document.querySelectorAll('.food');
+
+    foods.forEach(food => {
+      const foodRect = food.getBoundingClientRect();
+      if (
+        playerRect.left < foodRect.right &&
+        playerRect.right > foodRect.left &&
+        playerRect.top < foodRect.bottom &&
+        playerRect.bottom > foodRect.top
+      ) {
+        growFish(playerFish);
+        removeFood(food);
+      }
+    });
+  }
+
+  // Yemi yok etme 
+  function removeFood(food) {
+    food.parentNode.removeChild(food);
+    playerLevel++;
+    document.getElementById('player-level').innerText = playerLevel;
+  }
+
+  startGame();
+</script>
+
+</body>
+</html>
