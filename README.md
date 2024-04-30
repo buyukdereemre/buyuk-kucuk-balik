@@ -7,8 +7,8 @@ Büyük Balık Küçük Balık html,javascript ve css dilleri kullanılarak haz�
 Mouse ile oynanan oyunda amacınız başkalarının yemi olmadan en büyük olmak. Sol üst köşede seviyenizi görebilirsiniz. Eğer denizlerde yüzerken denk geldiğiniz balıkların seviyesi sizden küçükse onu yer büyük ise yem olursunuz!
 
 
-#Yükleme 
-Projeyi kullanmak için https://github.com/buyukdereemre adresini ziyaret edip buyuk-kucuk-balik repositesini indirebilirsiniz.
+#İndirme 
+Projeyi indirmek için yeşil <>Code tuşuna bastıktan download zip tuşuna basarak indirebilirsiniz.
 
 
 #Oyunun tanıtım videosu youtube linki
